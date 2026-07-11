@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Canon Archive — A Complete Star Wars Chronicle</title>
+<meta name="description" content="Every canon Star Wars film and series, in one archive.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;900&family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="starfield" aria-hidden="true"></div>
+
+<!-- Opening crawl -->
+<div id="crawl-screen" role="presentation">
+  <div id="begin-prompt" role="button" tabindex="0" aria-label="Click to begin">
+    <div class="begin-prompt-inner">
+      <span class="begin-prompt-title">THE CANON ARCHIVE</span>
+      <span class="begin-prompt-cta">Click to Begin</span>
+    </div>
+  </div>
+  <div class="crawl-logo">
+    A LONG TIME AGO, CATALOGUED IN A DATABASE FAR, FAR AWAY
+    <span>EPISODES · STORIES · CHRONICLES</span>
+  </div>
+  <div class="crawl-viewport">
+    <div class="crawl-text">
+      <h2>THE CANON ARCHIVE</h2>
+      <p>
+        For nearly five decades, one saga has spread across generations —
+        from a single desert farm boy to a galaxy of rebels, smugglers,
+        clones, and Jedi.
+      </p>
+      <p>
+        This archive gathers every film and series recognized as official
+        canon: the nine chapters of the Skywalker Saga, the anthology
+        films that widen the frame, and the animated and live-action
+        series that fill in the spaces between.
+      </p>
+      <p>
+        Old myths and forgotten timelines are set aside. Only the
+        current, official record remains.
+      </p>
+      <p>
+        Browse by era. Filter by format. Click any entry for its
+        full chronicle.
+      </p>
+      <p>
+        The Archive awaits...
+      </p>
+    </div>
+  </div>
+  <button id="skip-crawl">Skip Intro</button>
+  <audio id="theme-audio" src="media/swmt.mp3" preload="auto"></audio>
+</div>
+
+<header class="site-header">
+  <h1 class="site-title">THE CANON ARCHIVE</h1>
+  <div class="site-subtitle">Every Film &amp; Series · Official Canon Only</div>
+  <div class="header-rule"></div>
+</header>
+
+<div class="controls" id="filters"></div>
+<p id="result-count" style="text-align:center; color:var(--muted); font-family:var(--font-ui); font-size:0.8rem; margin:6px 0 0;"></p>
+
+<main>
+  <div class="grid" id="grid"></div>
+</main>
+
+<div id="modal-overlay" tabindex="-1">
+  <div class="modal" id="modal-content" role="dialog" aria-modal="true"></div>
+</div>
+
+<footer>
+  Fan-made archive · Star Wars and all related characters are trademarks of Lucasfilm Ltd.<br>
+  Not affiliated with or endorsed by Lucasfilm or Disney.
+</footer>
+
+<script src="data.js"></script>
+<script src="script.js"></script>
+</body>
+</html>

@@ -1,12 +1,19 @@
 # The Canon Archive
 
 A single-page site cataloguing every **official-canon** Star Wars film and
-series: 12 films (the 9-film Skywalker Saga plus *Rogue One*, *Solo*, and
-the 2008 *Clone Wars* film) and 14 series (animated + live-action).
+series: 13 films (the 9-film Skywalker Saga plus *Rogue One*, *Solo*, the
+2008 *Clone Wars* film, and 2026's *The Mandalorian and Grogu*) and 17
+series (animated + live-action, including the *Forces of Destiny* shorts).
 Legends/Expanded Universe material is excluded, as are stories Lucasfilm
 has explicitly placed outside the main continuity (e.g. *Star Wars:
-Visions*), and the 1985–86 *Droids*/*Ewoks* cartoons, which Lucasfilm's
-own databank still treats as Legends rather than canon.
+Visions*), and the 1985–86 *Droids* and 1985–87 *Ewoks* cartoons, which
+Lucasfilm's own databank still treats as Legends rather than canon.
+
+Entries are sorted by in-universe chronology via the `order` field, not
+by release date — so *Rogue One* (3.9) lands immediately before *A New
+Hope* (4), and *Solo* (3.4) sits back where it belongs among the early
+Imperial years. *Forces of Destiny* is parked at the end (9.9) because it
+ranges across every era rather than occupying one slot.
 
 ## How to open it
 Just open `index.html` in any modern browser. No build step, no server

@@ -27,7 +27,8 @@
     <span>EPISODES · STORIES · CHRONICLES</span>
   </div>
   <div class="crawl-viewport">
-    <div class="crawl-text">
+    <div class="crawl-plane">
+     <div class="crawl-text" id="crawl-text">
       <h2>THE CANON ARCHIVE</h2>
       <p>
         For nearly five decades, one saga has spread across generations —
@@ -45,12 +46,14 @@
         current, official record remains.
       </p>
       <p>
-        Browse by era. Filter by format. Click any entry for its
-        full chronicle.
+        Follow the timeline from the High Republic to the Battle of
+        Exegol, or browse the full archive. Select any entry to open
+        its full chronicle.
       </p>
       <p>
         The Archive awaits...
       </p>
+     </div>
     </div>
   </div>
   <button id="skip-crawl">Skip Intro</button>
@@ -63,12 +66,45 @@
   <div class="header-rule"></div>
 </header>
 
-<div class="controls" id="filters"></div>
-<p id="result-count" style="text-align:center; color:var(--muted); font-family:var(--font-ui); font-size:0.8rem; margin:6px 0 0;"></p>
+<nav class="view-tabs" role="tablist" aria-label="View">
+  <button class="view-tab active" role="tab" data-view="timeline" aria-selected="true">Timeline</button>
+  <button class="view-tab" role="tab" data-view="archive" aria-selected="false">Archive</button>
+</nav>
 
-<main>
-  <div class="grid" id="grid"></div>
-</main>
+<section id="view-timeline" class="view">
+  <div class="tl-toolbar">
+    <div class="tl-presets" id="tl-presets"></div>
+    <div class="tl-zoom">
+      <button id="tl-zoom-out" aria-label="Zoom out">−</button>
+      <input type="range" id="tl-zoom" min="0" max="100" value="30" aria-label="Zoom">
+      <button id="tl-zoom-in" aria-label="Zoom in">+</button>
+    </div>
+  </div>
+  <div class="timeline" id="timeline">
+    <div class="tl-labels" id="tl-labels"></div>
+    <div class="tl-scroll" id="tl-scroll"><div class="tl-canvas" id="tl-canvas"></div></div>
+  </div>
+  <div class="tl-legend">
+    <span><i class="lg lg-main"></i>Main story</span>
+    <span><i class="lg lg-flashback"></i>Flashback / prologue</span>
+    <span><i class="lg lg-crossover"></i>Crossover with another series</span>
+    <span><i class="lg lg-epilogue"></i>Epilogue</span>
+    <span><i class="lg lg-range"></i>Spread across eras</span>
+    <span><b>c.</b> approximate date</span>
+    <span>Stories set in the same year are ordered by plot, not exact dates</span>
+    <span class="tl-hint">Drag to pan · Ctrl/⌘ + scroll to zoom</span>
+  </div>
+  <div class="tl-scales" id="tl-scales"></div>
+  <div id="tl-tip" role="tooltip"></div>
+</section>
+
+<section id="view-archive" class="view" hidden>
+  <div class="controls" id="filters"></div>
+  <p id="result-count" style="text-align:center; color:var(--muted); font-family:var(--font-ui); font-size:0.8rem; margin:6px 0 0;"></p>
+  <main>
+    <div class="grid" id="grid"></div>
+  </main>
+</section>
 
 <div id="modal-overlay" tabindex="-1">
   <div class="modal" id="modal-content" role="dialog" aria-modal="true"></div>
@@ -81,5 +117,6 @@
 
 <script src="data.js"></script>
 <script src="script.js"></script>
+<script src="timeline.js"></script>
 </body>
 </html>

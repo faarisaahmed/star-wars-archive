@@ -143,17 +143,19 @@ document.addEventListener('keydown', (e) => {
 // ---------------- Opening crawl ----------------
 const themeAudio = document.getElementById('theme-audio');
 
-// These must match the CSS: crawl-text has a 3.4s animation-delay
-// (text starts scrolling then). Its scroll duration is set to match
-// exactly when the music finishes fading out (16s + 3s fade = 19s),
-// so the crawl ends right as the fade completes.
-const CRAWL_TEXT_START = 3400;
-const MUSIC_FADE_DELAY = 16000;  // start fading 16s after the music begins
-const FADE_OUT_MS = 3000;        // how long that fade-out takes
+// The crawl is driven frame by frame rather than by a fixed-length CSS
+// animation. The text starts fully below the screen, moves at a steady
+// reading pace (about one line a second), and the intro ends as soon
+// as the last line has receded into the distance. There's no dead air
+// at the end, and the pacing is the same on any screen size.
+const CRAWL_TEXT_START = 3400;   // after the title card has faded
+const SECONDS_PER_LINE = 1.05;   // reading pace
+const END_FADE_MS = 2500;        // music + screen fade once the text is gone
 const SKIP_FADE_MS = 400;        // quick fade if the user skips
 const TARGET_VOLUME = 1;
 
 let fadeRAF = null;
+let crawlRAF = null;
 let themeStarted = false;
 let crawlActive = true;
 function cancelFade() {
@@ -185,8 +187,7 @@ function playTheme() {
   themeAudio.volume = 0;
   const p = themeAudio.play();
   const startFade = () => fadeAudio(TARGET_VOLUME, 800);
-  // Browsers may block autoplay with sound until the user has interacted
-  // with the page at least once; fail silently if so.
+  // Fail silently if the file is missing or playback is refused.
   if (p && p.then) p.then(startFade).catch(() => { themeStarted = false; });
   else startFade();
 }
@@ -200,33 +201,52 @@ function stopTheme() {
 }
 
 function skipCrawl(quick) {
+  if (!crawlActive) return;
   crawlActive = false;
-  cancelFade();
-  const finish = () => {
-    const screen = document.getElementById('crawl-screen');
-    if (!screen) return;
+  if (crawlRAF) cancelAnimationFrame(crawlRAF);
+  const screen = document.getElementById('crawl-screen');
+  const fadeMs = quick ? SKIP_FADE_MS : END_FADE_MS;
+  if (screen) {
+    screen.style.transitionDuration = fadeMs + 'ms';
     screen.classList.add('hidden');
-    setTimeout(() => screen.remove(), 900);
-  };
-  if (quick) {
-    // Manual skip: cut the music with a quick fade.
-    fadeAudio(0, SKIP_FADE_MS, stopTheme);
-  } else {
-    // Natural end of crawl: music has already faded itself out.
-    stopTheme();
+    setTimeout(() => screen.remove(), fadeMs + 100);
   }
-  finish();
+  fadeAudio(0, fadeMs, stopTheme);
 }
 document.getElementById('skip-crawl').addEventListener('click', (e) => {
   e.stopPropagation(); // don't also trigger the begin-prompt click below
   skipCrawl(true);
 });
 
+function runCrawl() {
+  const text = document.getElementById('crawl-text');
+  const viewport = document.querySelector('.crawl-viewport');
+  const para = text.querySelector('p');
+  const lineHeight = parseFloat(getComputedStyle(para).lineHeight) || 40;
+  const speed = lineHeight / SECONDS_PER_LINE; // px per second
+  const lastLine = text.lastElementChild;
+  const t0 = performance.now();
+
+  function frame(now) {
+    if (!crawlActive) return;
+    text.style.transform = `translateY(${-(now - t0) / 1000 * speed}px)`;
+    // getBoundingClientRect includes the 3D tilt, so this is where the
+    // last line actually appears on screen. Once it's up in the faded-out
+    // top band of the viewport, the crawl is over.
+    const vp = viewport.getBoundingClientRect();
+    const last = lastLine.getBoundingClientRect();
+    if (last.bottom < vp.top + vp.height * 0.18) { skipCrawl(false); return; }
+    crawlRAF = requestAnimationFrame(frame);
+  }
+  crawlRAF = requestAnimationFrame(frame);
+}
+
 // The crawl (and its music) stay dormant behind a "Click to Begin"
 // prompt. Starting on a real click means the browser always allows the
-// audio to play — no autoplay-blocking, no guessing whether it worked.
+// audio to play.
 const beginPrompt = document.getElementById('begin-prompt');
 const crawlScreen = document.getElementById('crawl-screen');
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 let began = false;
 
 function beginCrawl() {
@@ -234,21 +254,35 @@ function beginCrawl() {
   began = true;
   beginPrompt.classList.add('hidden');
   crawlScreen.classList.add('playing');
-
-  // Music starts the moment the text begins scrolling, in sync with the
-  // CSS animation-delay. 16 seconds later it starts fading out, and the
-  // instant that fade finishes, the intro ends.
-  setTimeout(() => { if (crawlActive) playTheme(); }, CRAWL_TEXT_START);
+  if (reducedMotion) return; // text is shown static; Skip enters the archive
   setTimeout(() => {
     if (!crawlActive) return;
-    fadeAudio(0, FADE_OUT_MS, () => { if (crawlActive) skipCrawl(false); });
-  }, CRAWL_TEXT_START + MUSIC_FADE_DELAY);
+    playTheme();
+    runCrawl();
+  }, CRAWL_TEXT_START);
 }
 beginPrompt.addEventListener('click', beginCrawl);
 beginPrompt.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' || e.key === ' ') beginCrawl();
 });
 
+// ---------------- View tabs ----------------
+const viewTabs = document.querySelectorAll('.view-tab');
+function showView(name) {
+  viewTabs.forEach(t => {
+    const on = t.dataset.view === name;
+    t.classList.toggle('active', on);
+    t.setAttribute('aria-selected', on);
+  });
+  document.querySelectorAll('.view').forEach(v => { v.hidden = v.id !== `view-${name}`; });
+  if (name === 'timeline' && window.renderTimeline) window.renderTimeline();
+}
+viewTabs.forEach(t => t.addEventListener('click', () => {
+  history.replaceState(null, '', '#' + t.dataset.view);
+  showView(t.dataset.view);
+}));
+
 // ---------------- Init ----------------
 buildFilters();
 renderGrid();
+showView(location.hash === '#archive' ? 'archive' : 'timeline');

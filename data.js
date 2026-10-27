@@ -416,3 +416,139 @@ const SW_ERAS = {
   newrepublic:  { label: "New Republic Era", color: "#8fd694" },
   sequel:       { label: "Sequel Era",       color: "#ff5c5c" },
 };
+
+// =========================================================
+// TIMELINE DATA
+// Positions are "year index" numbers: n BBY → -n, n ABY → +n,
+// and each year occupies [index, index + 1). The fraction places
+// things *within* a year (0.0 = start, 0.9 = late in the year) so
+// stories set in the same year (e.g. everything around 9 ABY) can
+// still be shown in their relative order. 0 BBY and 0 ABY are the
+// same year: the year of the Battle of Yavin.
+// =========================================================
+
+// Segment kinds: main · flashback · crossover · epilogue · range
+// `approx: true` marks dates Lucasfilm hasn't pinned down exactly.
+const SW_SPANS = {
+  "series-yja":   { approx: true, segments: [{ s: -231.8, e: -231.2, label: "Tenoo", kind: "main" }],
+                    note: "Set during the High Republic, roughly two centuries before the Skywalker Saga." },
+  "series-acolyte": { segments: [
+                    { s: -115.7, e: -115.6, label: "Brendok", kind: "flashback" },
+                    { s: -99.7, e: -99.5, label: "Main story", kind: "main" }],
+                    note: "Episode 3 flashes back 16 years to the witches of Brendok." },
+  "series-totj":  { approx: true, segments: [
+                    { s: -41.5, e: -31.8, label: "Dooku's arc", kind: "main" },
+                    { s: -35.7, e: -35.6, label: "Ahsoka's birth", kind: "flashback" },
+                    { s: -18.7, e: -18.6, label: "Ahsoka after Order 66", kind: "epilogue" }],
+                    note: "Six shorts that jump decades, from Dooku's years as a Jedi to Ahsoka's survival of the purge." },
+  "tpm":          { segments: [{ s: -31.6, e: -31.5, kind: "main" }] },
+  "aotc":         { segments: [{ s: -21.8, e: -21.75, kind: "main" }] },
+  "tcw-film":     { segments: [{ s: -21.7, e: -21.65, kind: "main" }] },
+  "series-tcw":   { segments: [{ s: -21.72, e: -18.68, label: "The Clone Wars, 22–19 BBY", kind: "main" }],
+                    note: "Spans the whole war. The final arc (Siege of Mandalore) plays alongside Revenge of the Sith." },
+  "rots":         { segments: [{ s: -18.72, e: -18.66, kind: "main" }] },
+  "series-badbatch": { segments: [{ s: -18.66, e: -17.2, label: "S1–S3", kind: "main" }],
+                    note: "Begins during Order 66 and runs through the first year or so of the Empire." },
+  "series-totu":  { approx: true, segments: [{ s: -18.6, e: -17.8, kind: "main" }] },
+  "series-tote":  { approx: true, segments: [{ s: -19.5, e: -17.5, kind: "main" }],
+                    note: "Morgan Elsbeth's story starts in the last days of the Clone Wars; Barriss Offee's follows the early Empire." },
+  "series-maul":  { approx: true, segments: [{ s: -17.8, e: -17.2, kind: "main" }] },
+  "solo":         { segments: [
+                    { s: -12.6, e: -12.5, label: "Prologue", kind: "flashback" },
+                    { s: -9.6, e: -9.4, label: "Kessel Run", kind: "main" }] },
+  "series-obiwan": { segments: [{ s: -8.6, e: -8.4, kind: "main" }] },
+  "series-rebels": { segments: [
+                    { s: -4.9, e: 0.2, label: "S1–S4", kind: "main" },
+                    { s: 4.6, e: 4.8, label: "Epilogue", kind: "epilogue" }],
+                    note: "The epilogue takes place after the Battle of Endor." },
+  "series-andor": { segments: [
+                    { s: -4.9, e: -4.1, label: "S1", kind: "main" },
+                    { s: -3.9, e: 0.24, label: "S2 · one arc per year", kind: "main" }],
+                    note: "Season 2 jumps a year between each three-episode arc, ending days before Rogue One." },
+  "rogueone":     { segments: [{ s: 0.25, e: 0.3, kind: "main" }] },
+  "anh":          { segments: [{ s: 0.31, e: 0.35, kind: "main" }] },
+  "esb":          { segments: [{ s: 3.3, e: 3.45, kind: "main" }] },
+  "rotj":         { segments: [{ s: 4.4, e: 4.45, kind: "main" }] },
+  "series-mando": { segments: [
+                    { s: 9.02, e: 9.26, label: "S1", kind: "main" },
+                    { s: 9.29, e: 9.52, label: "S2", kind: "main" },
+                    { s: 9.78, e: 9.98, label: "S3", kind: "main" }],
+                    note: "Seasons 1 and 2 run back to back. Then there's a gap, filled by The Book of Boba Fett (which Din Djarin joins partway through), before Season 3 picks up." },
+  "series-bobf":  { segments: [
+                    { s: 4.45, e: 8.9, label: "Flashbacks: Sarlacc → Tuskens", kind: "flashback" },
+                    { s: 9.53, e: 9.76, label: "Present day", kind: "main" },
+                    { s: 9.62, e: 9.71, label: "Ch. 5–7 · Din & Grogu", kind: "crossover" }],
+                    note: "Starts in The Mandalorian S2's post-credits scene. Chapters 5–7 are effectively Mandalorian episodes, and its finale leads straight into Mandalorian S3." },
+  "series-skeletoncrew": { approx: true, segments: [{ s: 9.5, e: 9.8, kind: "main" }],
+                    note: "Lucasfilm places it concurrent with The Mandalorian and Ahsoka; the exact year is kept loose." },
+  "series-ahsoka": { approx: true, segments: [{ s: 9.85, e: 10.6, kind: "main" }],
+                    note: "Usually dated c. 9–11 ABY, around the same time as Mandalorian S3." },
+  "mandogrogu":   { approx: true, segments: [{ s: 10.05, e: 10.3, kind: "main" }],
+                    note: "Follows Mandalorian S3, with Din now working for the New Republic." },
+  "series-resistance": { segments: [{ s: 33.7, e: 34.45, label: "S1–S2", kind: "main" }],
+                    note: "Season 1 begins about six months before The Force Awakens; Season 2 runs alongside The Last Jedi." },
+  "tfa":          { segments: [{ s: 34.3, e: 34.33, kind: "main" }] },
+  "tlj":          { segments: [{ s: 34.34, e: 34.37, kind: "main" }] },
+  "tros":         { segments: [{ s: 35.4, e: 35.45, kind: "main" }] },
+  "series-fod":   { segments: [{ s: -31.6, e: 35.45, label: "Shorts across every era", kind: "range" }] },
+};
+
+// Key in-universe events. `major` events get a guide line through every lane.
+const SW_EVENTS = [
+  { y: -231.5, label: "Great Hyperspace Disaster", approx: true },
+  { y: -40.5, label: "Anakin Skywalker born" },
+  { y: -31.55, label: "Battle of Naboo · Sith revealed" },
+  { y: -21.77, label: "Battle of Geonosis · Clone Wars begin", major: true },
+  { y: -18.69, label: "Order 66 · Empire declared", major: true },
+  { y: -18.6, label: "Luke & Leia born" },
+  { y: -9.5, label: "The Kessel Run" },
+  { y: -1.6, label: "Ghorman Massacre" },
+  { y: -1.3, label: "Rebel Alliance formed" },
+  { y: 0.28, label: "Battle of Scarif" },
+  { y: 0.34, label: "Battle of Yavin · Death Star destroyed", major: true },
+  { y: 3.35, label: "Battle of Hoth" },
+  { y: 4.43, label: "Battle of Endor · Emperor & Vader fall", major: true },
+  { y: 5.5, label: "Battle of Jakku · Galactic Concordance" },
+  { y: 9.96, label: "Liberation of Mandalore", approx: true },
+  { y: 28.5, label: "Luke's Jedi temple destroyed", approx: true },
+  { y: 34.31, label: "Starkiller Base destroys the Hosnian system", major: true },
+  { y: 34.36, label: "Battle of Crait" },
+  { y: 35.44, label: "Battle of Exegol", major: true },
+];
+
+// Lucasfilm Publishing's official named eras.
+const SW_CANON_ERAS = [
+  { s: -240, e: -99.5, label: "The High Republic", note: "c. 500–100 BBY" },
+  { s: -32, e: -18.69, label: "Fall of the Jedi" },
+  { s: -18.69, e: -5, label: "Reign of the Empire" },
+  { s: -5, e: 4.45, label: "Age of Rebellion" },
+  { s: 4.45, e: 28.5, label: "The New Republic" },
+  { s: 28.5, e: 36.5, label: "Rise of the First Order" },
+];
+
+// Ways of counting years. BBY/ABY is the official one; the others are the
+// relative reckonings characters, scripts and marketing use ("five years
+// after Return of the Jedi", "thirty years after the fall of the Empire").
+// `fmt` receives the integer year index (BBY negative).
+const SW_SCALES = {
+  yavin: {
+    label: "BBY / ABY",
+    desc: "Before / After the Battle of Yavin, the official dating system. Year 0 is the year of A New Hope and the first Death Star's destruction. There's no gap between 0 BBY and 0 ABY: they're the same year.",
+    fmt: y => y === 0 ? "0 · Yavin" : (y < 0 ? `${-y} BBY` : `${y} ABY`),
+  },
+  endor: {
+    label: "Years from Endor",
+    desc: "Counted from the Battle of Endor (4 ABY), the Empire's fall. This is how the New Republic era is usually described, e.g. The Mandalorian is \"five years after Return of the Jedi.\"",
+    fmt: y => { const d = y - 4; return d === 0 ? "Endor" : (d < 0 ? `${-d} before` : `+${d}`); },
+  },
+  empire: {
+    label: "Years of the Empire",
+    desc: "Counted from the Declaration of a New Order (19 BBY). Luke and Leia were born the same year, so this number is also their age.",
+    fmt: y => { const d = y + 19; return d === 0 ? "Empire" : (d < 0 ? `${-d} before` : `Yr ${d}`); },
+  },
+  naboo: {
+    label: "Years from Naboo",
+    desc: "Counted from The Phantom Menace (32 BBY). Handy for the prequels: Attack of the Clones is \"ten years later\", Revenge of the Sith thirteen.",
+    fmt: y => { const d = y + 32; return d === 0 ? "Naboo" : (d < 0 ? `${-d} before` : `+${d}`); },
+  },
+};

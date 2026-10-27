@@ -15,6 +15,27 @@ Hope* (4), and *Solo* (3.4) sits back where it belongs among the early
 Imperial years. *Forces of Destiny* is parked at the end (9.9) because it
 ranges across every era rather than occupying one slot.
 
+## Timeline view
+The page opens on an in-universe **timeline**. Every film and series is a
+lane, drawn as one or more spans: main story, flashbacks, crossovers, and
+epilogues. This is how *The Mandalorian* shows Seasons 1–2, then a gap
+filled by *The Book of Boba Fett* (whose Chapters 5–7 are marked as a
+crossover with Din Djarin), then Season 3. Above the lanes:
+- **Canon eras**: Lucasfilm's official named eras.
+- **BBY / ABY ruler**: the official dating system.
+- **A second, switchable ruler**: years from Endor, years of the Empire,
+  or years from Naboo, the relative reckonings the stories themselves use.
+- **Key events**: battles and turning points. Major ones draw a guide line
+  through every lane.
+
+Everything older than 45 BBY (the High Republic) is drawn on a compressed
+scale. Use the preset buttons, the zoom slider, or Ctrl/⌘ + scroll to
+zoom, and drag to pan. Hover any bar or event for dates and notes, and
+click a bar to open its entry. Spans, events, and eras are all defined in
+`data.js` (`SW_SPANS`, `SW_EVENTS`, `SW_CANON_ERAS`, `SW_SCALES`).
+
+The **Archive** tab is the original card grid with filters.
+
 ## How to open it
 Just open `index.html` in any modern browser. No build step, no server
 required (though if your browser blocks local scripts, run a quick local
@@ -25,7 +46,8 @@ server: `python3 -m http.server` from this folder, then visit
 - `index.html` — page structure, opening crawl copy
 - `style.css` — all visual styling (dark space theme, gold/era color coding)
 - `data.js` — every entry's title, year, director/creator, summary, tags
-- `script.js` — rendering, filtering, and the detail modal
+- `script.js` — card grid, filtering, detail modal, opening crawl, tabs
+- `timeline.js` — the timeline view
 - `media/` — empty on purpose, see below
 
 ## Adding the theme music
@@ -35,11 +57,11 @@ autoplay sound before a real interaction, so gating the whole intro
 behind one click means it always works, in every browser, no
 guessing games:
 - Music starts right as the crawl text begins scrolling (a beat after
-  the title fades in) — not the instant you click.
-- It starts fading out 16 seconds later, over about 3 seconds — and the
-  instant that fade finishes, the intro itself ends and drops you into
-  the archive. The crawl text's scroll speed is timed to finish
-  scrolling at that same moment.
+  the title fades in), not the instant you click.
+- The text starts fully below the screen and scrolls at a steady reading
+  pace (`SECONDS_PER_LINE` in `script.js`). As soon as the last line has
+  receded into the distance, the music and screen fade out together over
+  2.5 seconds. Nothing plays after the text is gone.
 - Hitting "Skip Intro" cuts it with a quick ~0.4 second fade instead of
   an abrupt stop.
 

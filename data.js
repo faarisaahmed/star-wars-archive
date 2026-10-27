@@ -474,7 +474,7 @@ const SW_SPANS = {
                     { s: 9.29, e: 9.52, label: "S2", kind: "main" },
                     { s: 9.78, e: 9.98, label: "S3", kind: "main" }],
                     note: "Seasons 1 and 2 run back to back. Then there's a gap, filled by The Book of Boba Fett (which Din Djarin joins partway through), before Season 3 picks up." },
-  "series-bobf":  { segments: [
+  "series-bobf":  { below: "series-mando", segments: [
                     { s: 4.45, e: 8.9, label: "Flashbacks: Sarlacc → Tuskens", kind: "flashback" },
                     { s: 9.53, e: 9.76, label: "Present day", kind: "main" },
                     { s: 9.62, e: 9.71, label: "Ch. 5–7 · Din & Grogu", kind: "crossover" }],

@@ -67,21 +67,29 @@
 </header>
 
 <nav class="view-tabs" role="tablist" aria-label="View">
-  <button class="view-tab active" role="tab" data-view="timeline" aria-selected="true">Timeline</button>
-  <button class="view-tab" role="tab" data-view="archive" aria-selected="false">Archive</button>
+  <button class="view-tab active" role="tab" data-view="archive" aria-selected="true">Archive</button>
+  <button class="view-tab" role="tab" data-view="timeline" aria-selected="false">Timeline</button>
 </nav>
 
-<section id="view-timeline" class="view">
+<section id="view-archive" class="view">
+  <div class="controls" id="filters"></div>
+  <p id="result-count" style="text-align:center; color:var(--muted); font-family:var(--font-ui); font-size:0.8rem; margin:6px 0 0;"></p>
+  <main>
+    <div class="grid" id="grid"></div>
+  </main>
+</section>
+
+<section id="view-timeline" class="view" hidden>
   <div class="tl-toolbar">
     <div class="tl-presets" id="tl-presets"></div>
     <div class="tl-zoom">
+      <select id="tl-secondary" aria-label="Second way of counting years"></select>
       <button id="tl-zoom-out" aria-label="Zoom out">−</button>
       <input type="range" id="tl-zoom" min="0" max="100" value="30" aria-label="Zoom">
       <button id="tl-zoom-in" aria-label="Zoom in">+</button>
     </div>
   </div>
   <div class="timeline" id="timeline">
-    <div class="tl-labels" id="tl-labels"></div>
     <div class="tl-scroll" id="tl-scroll"><div class="tl-canvas" id="tl-canvas"></div></div>
   </div>
   <div class="tl-legend">
@@ -92,19 +100,12 @@
     <span><i class="lg lg-range"></i>Spread across eras</span>
     <span><b>c.</b> approximate date</span>
     <span>Stories set in the same year are ordered by plot, not exact dates</span>
-    <span class="tl-hint">Drag to pan · Ctrl/⌘ + scroll to zoom</span>
+    <span class="tl-hint">Click any story for details · Drag to pan · Ctrl/⌘ + scroll to zoom</span>
   </div>
   <div class="tl-scales" id="tl-scales"></div>
   <div id="tl-tip" role="tooltip"></div>
 </section>
 
-<section id="view-archive" class="view" hidden>
-  <div class="controls" id="filters"></div>
-  <p id="result-count" style="text-align:center; color:var(--muted); font-family:var(--font-ui); font-size:0.8rem; margin:6px 0 0;"></p>
-  <main>
-    <div class="grid" id="grid"></div>
-  </main>
-</section>
 
 <div id="modal-overlay" tabindex="-1">
   <div class="modal" id="modal-content" role="dialog" aria-modal="true"></div>

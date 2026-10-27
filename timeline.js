@@ -1,16 +1,17 @@
 // STAR WARS CANON ARCHIVE — TIMELINE
-// A zoomable, pannable in-universe timeline. Every film/series is a lane
-// with one or more spans (main story, flashbacks, crossovers, epilogues).
-// Key events sit on their own track above the lanes.
+// A zoomable, pannable in-universe timeline. Each film/series is drawn as
+// one or more spans (main story, flashbacks, crossovers, epilogues) with
+// its title beside it; stories that don't overlap share a row. Key events
+// sit on a single track above.
 
 (function () {
-  const labelsEl = document.getElementById('tl-labels');
   const scrollEl = document.getElementById('tl-scroll');
   const canvasEl = document.getElementById('tl-canvas');
   const tipEl = document.getElementById('tl-tip');
   const zoomEl = document.getElementById('tl-zoom');
   const presetsEl = document.getElementById('tl-presets');
   const scalesEl = document.getElementById('tl-scales');
+  const secondaryEl = document.getElementById('tl-secondary');
 
   // ---------- Scale ----------
   // Everything older than BREAK (the High Republic) is drawn on a
@@ -23,13 +24,11 @@
   const MIN_PPY = 6;
   const MAX_PPY = 1500;
 
-  const ROW = { era: 32, axis: 34, axis2: 28, event: 22, lane: 30 };
-  const MAX_EVENT_ROWS = 5;
-
+  const ROW = { era: 26, axis: 30, axis2: 14, events: 30, lane: 30 };
   const ERA_COLORS = ['#7dd3fc', '#e8c468', '#a78bfa', '#ff8c42', '#8fd694', '#ff5c5c'];
 
-  let ppy = 10;              // pixels per year in the main (uncompressed) region
-  let secondary = 'endor';   // which alternative reckoning the second ruler shows
+  let ppy = 10;            // pixels per year in the main (uncompressed) region
+  let secondary = null;    // optional second reckoning shown under the BBY/ABY labels
   let fitted = false;
 
   const compRate = () => Math.min(5, Math.max(2.5, ppy * 0.12));
@@ -44,6 +43,16 @@
     return BREAK + (px - bx) / ppy;
   }
   const totalWidth = () => x(DOMAIN_END) + PAD_R;
+
+  // Text width, for deciding where labels fit.
+  const measureCtx = document.createElement('canvas').getContext('2d');
+  function textWidth(text, font) {
+    measureCtx.font = font;
+    return measureCtx.measureText(text).width;
+  }
+  const NAME_FONT = "600 14px 'Barlow Condensed', sans-serif";
+  const BAR_FONT = "700 11px 'Barlow', sans-serif";
+  const EVENT_FONT = "500 13px 'Barlow Condensed', sans-serif";
 
   // ---------- Formatting ----------
   const idx = y => Math.floor(y + 1e-9);
@@ -70,22 +79,108 @@
     const f = LONG[secondary];
     if (!f) return '';
     const a = f(idx(s)), b = f(idx(e));
-    return a === b ? a : `${a} → ${b}`;
+    return `<br><span class="alt">${a === b ? a : `${a} → ${b}`}</span>`;
   }
 
   // ---------- Data prep ----------
-  const items = SW_DATA.filter(d => SW_SPANS[d.id]).map(d => {
-    const span = SW_SPANS[d.id];
-    const main = span.segments.find(s => s.kind === 'main') || span.segments[0];
-    const sortKey = main.kind === 'range' ? Infinity : main.s;
-    return { item: d, span, sortKey };
-  }).sort((a, b) => a.sortKey - b.sortKey);
-
   // "Star Wars: The Clone Wars" is both a film and a series.
   const laneTitle = d => SW_DATA.some(o => o !== d && o.title === d.title)
     ? `${d.title} (${d.type === 'movie' ? 'film' : 'series'})` : d.title;
+  // Shorter names for the timeline itself; the tooltip and modal keep the full title.
+  const shortTitle = d => laneTitle(d).replace(/^Star Wars:?\s+/, '').replace(/: A Star Wars Story$/, '');
+
+  const items = SW_DATA.filter(d => SW_SPANS[d.id]).map(d => {
+    const span = SW_SPANS[d.id];
+    return {
+      item: d,
+      span,
+      start: Math.min(...span.segments.map(g => g.s)),
+      end: Math.max(...span.segments.map(g => g.e)),
+      isRange: span.segments.every(g => g.kind === 'range'),
+    };
+  });
 
   const eraColor = era => (SW_ERAS[era] && SW_ERAS[era].color) || '#e8c468';
+
+  // ---------- Layout ----------
+  // Row packing: each story takes the first row where it (and its label)
+  // fits. A story with `below` in its span data is placed directly under
+  // that story when there's room (Boba Fett under The Mandalorian).
+  // Stories that span the whole saga get their own row at the bottom.
+  function layoutLanes() {
+    const rows = [];
+    const fitsIn = (r, a, b) => (rows[r] || []).every(([c, d]) => b + 14 <= c || a >= d + 14);
+    const take = (r, a, b) => { (rows[r] = rows[r] || []).push([a, b]); };
+    const placed = [];
+    const byId = {};
+    const measure = it => {
+      const l = x(it.start);
+      const r = Math.max(x(it.end), l + 6);
+      const name = shortTitle(it.item) + (it.span.approx ? ' (c.)' : '');
+      const nameW = textWidth(name, NAME_FONT);
+      // The name goes inside the bar if it's wide enough, else just after the last segment.
+      const main = it.span.segments.find(g => g.kind === 'main');
+      const inside = it.span.segments.length === 1 && main && x(main.e) - x(main.s) > nameW + 16;
+      return { l, r: inside ? r : r + 8 + nameW, name, inside, nameX: r + 8 };
+    };
+    const place = (it, row) => {
+      const m = measure(it);
+      take(row, m.l, m.r);
+      byId[it.item.id] = row;
+      placed.push({ ...it, ...m, row });
+    };
+    const stories = items.filter(i => !i.isRange).sort((a, b) => a.start - b.start);
+    const deferred = stories.filter(it => it.span.below);
+    stories.filter(it => !it.span.below).forEach(it => {
+      const m = measure(it);
+      let row = 0;
+      while (!fitsIn(row, m.l, m.r)) row++;
+      place(it, row);
+    });
+    deferred.forEach(it => {
+      const m = measure(it);
+      let row = (byId[it.span.below] ?? -1) + 1;
+      if (!fitsIn(row, m.l, m.r)) {
+        // Make room by pushing everything at or below that row down one.
+        placed.forEach(p => { if (p.row >= row) p.row++; });
+        Object.keys(byId).forEach(k => { if (byId[k] >= row) byId[k]++; });
+        rows.splice(row, 0, []);
+      }
+      place(it, row);
+    });
+    const used = rows.length;
+    items.filter(i => i.isRange).forEach((it, k) => {
+      placed.push({ ...it, row: used + k, name: shortTitle(it.item), inside: false, nameX: x(it.end) + 8 });
+    });
+    placed.rows = used + items.filter(i => i.isRange).length;
+    return placed;
+  }
+
+  // One row of events. Major events claim space first and their labels
+  // may cover minor diamonds (those are hidden). Minor events get a label
+  // only where one fits, otherwise just a diamond with the name in the
+  // tooltip. Zoom in and more labels appear.
+  function layoutEvents() {
+    const limit = totalWidth() - 8;
+    const labels = [];
+    const clear = (a, b, pts) => labels.every(([c, d]) => b + 12 <= c || a >= d + 12)
+      && pts.every(p => p < a - 6 || p > b + 6);
+    const all = SW_EVENTS.map((ev, i) => ({ ev, i, px: x(ev.y) }));
+    const tryLabel = (e, pts) => {
+      const w = textWidth(e.ev.label, EVENT_FONT) + 8;
+      const right = [e.px + 8, e.px + 8 + w];
+      const left = [e.px - 8 - w, e.px - 8];
+      if (right[1] < limit && clear(...right, pts)) { e.side = 'right'; labels.push(right); }
+      else if (left[0] > 0 && clear(...left, pts)) { e.side = 'left'; labels.push(left); }
+    };
+    const majors = all.filter(e => e.ev.major);
+    const minors = all.filter(e => !e.ev.major);
+    majors.forEach(e => tryLabel(e, majors.filter(o => o !== e).map(o => o.px)));
+    minors.forEach(e => { e.hidden = !clear(e.px - 5, e.px + 5, []); });
+    const shown = all.filter(e => !e.hidden);
+    minors.filter(e => !e.hidden).forEach(e => tryLabel(e, shown.filter(o => o !== e).map(o => o.px)));
+    return shown;
+  }
 
   // ---------- Rendering ----------
   function tickStep(rate) {
@@ -93,8 +188,9 @@
     return 100;
   }
 
-  function axisHTML(fmt, cls) {
+  function axisHTML() {
     let out = '';
+    const alt = secondary && SW_SCALES[secondary].fmt;
     const seg = (from, to, rate) => {
       const step = tickStep(rate);
       const minor = rate >= 8 ? 1 : step;
@@ -104,8 +200,7 @@
         const px = x(y);
         out += `<div class="tl-tick${isMajor ? ' major' : ''}" style="left:${px}px"></div>`;
         if (isMajor) {
-          const label = fmt(y);
-          out += `<div class="tl-tick-label${y === 0 && cls !== 'secondary' ? ' zero' : ''}" style="left:${px}px">${label}</div>`;
+          out += `<div class="tl-tick-label${y === 0 ? ' zero' : ''}" style="left:${px}px">${SW_SCALES.yavin.fmt(y)}${alt ? `<small>${alt(y)}</small>` : ''}</div>`;
         }
       }
     };
@@ -123,79 +218,48 @@
     return out;
   }
 
-  function layoutEvents() {
-    const rowsEnd = [];
-    const limit = totalWidth() - 8;
-    const placed = SW_EVENTS.slice().sort((a, b) => a.y - b.y).map(ev => {
-      const px = x(ev.y);
-      const w = ev.label.length * 6.6 + 24;
-      // Labels that would run off the end of the timeline point left instead.
-      const flip = px + w > limit;
-      const from = flip ? px - w : px;
-      let row = rowsEnd.findIndex(end => end + 10 < from);
-      if (row === -1 && rowsEnd.length < MAX_EVENT_ROWS) row = rowsEnd.length;
-      if (row !== -1) {
-        rowsEnd[row] = flip ? px + 12 : px + w;
-        return { ev, px, row, labeled: true, flip };
-      }
-      // No room for the label: show just the diamond (label stays in the
-      // tooltip) in a row where it won't sit on top of someone else's text.
-      row = rowsEnd.findIndex(end => end < px - 6);
-      if (row === -1) return null;
-      rowsEnd[row] = px + 12;
-      return { ev, px, row, labeled: false, flip: false };
-    }).filter(Boolean);
-    placed.rows = Math.max(1, ...placed.map(p => p.row + 1));
-    return placed;
-  }
-
   function render() {
     if (!scrollEl.clientWidth) return; // hidden tab
     if (!fitted) { fitted = true; applyPreset(PRESETS[0]); return; }
 
     const width = totalWidth();
+    const lanes = layoutLanes();
     const events = layoutEvents();
-    const eventRows = events.rows;
-    const eventsH = eventRows * ROW.event + 10;
 
-    let y = 0;
     const top = {};
+    let y = 0;
     top.era = y; y += ROW.era;
-    top.axis = y; y += ROW.axis;
-    top.axis2 = y; y += ROW.axis2;
-    top.events = y; y += eventsH;
-    top.lanes = y;
-    const lanesH = items.length * ROW.lane;
+    top.axis = y; y += ROW.axis + (secondary ? ROW.axis2 : 0);
+    top.events = y; y += ROW.events;
+    top.lanes = y + 6;
+    const lanesH = lanes.rows * ROW.lane + 10;
     const height = top.lanes + lanesH;
 
-    let html = '';
-    html += gridHTML(top.events, height - top.events);
+    let html = gridHTML(top.events, height - top.events);
 
     // Canon eras
     SW_CANON_ERAS.forEach((era, i) => {
       const l = x(era.s), r = x(Math.min(era.e, DOMAIN_END));
-      html += `<div class="tl-era" style="left:${l}px;width:${r - l}px;--c:${ERA_COLORS[i % ERA_COLORS.length]}"
-        data-tip-era="${i}">${era.label}${era.note && r - l > 220 ? ` · ${era.note}` : ''}</div>`;
+      html += `<div class="tl-era" style="left:${l}px;width:${r - l}px;top:${top.era + 4}px;--c:${ERA_COLORS[i % ERA_COLORS.length]}"
+        data-tip-era="${i}"><span>${era.label}</span></div>`;
     });
 
-    // Axes
-    html += `<div class="tl-axis" style="top:${top.axis}px;height:${ROW.axis}px">${axisHTML(SW_SCALES.yavin.fmt)}</div>`;
-    html += `<div class="tl-axis secondary" style="top:${top.axis2}px;height:${ROW.axis2}px">${axisHTML(SW_SCALES[secondary].fmt, 'secondary')}</div>`;
+    // Axis (with the optional second reckoning under each label)
+    html += `<div class="tl-axis${secondary ? ' two' : ''}" style="top:${top.axis}px;height:${ROW.axis + (secondary ? ROW.axis2 : 0)}px">${axisHTML()}</div>`;
     html += `<div class="tl-break" style="left:${breakX()}px;top:${top.axis}px;height:${height - top.axis}px" title="Scale changes here"></div>`;
 
-    // Events + guide lines through the lanes for major ones
-    events.forEach(({ ev, px, row, labeled, flip }) => {
-      const ty = top.events + 5 + row * ROW.event;
-      html += `<div class="tl-event-stem" style="left:${px}px;top:${ty + 10}px;height:${top.lanes - ty - 10}px"></div>`;
-      html += `<div class="tl-event${ev.major ? ' major' : ''}${labeled ? '' : ' nolabel'}${flip ? ' flip' : ''}" style="left:${px}px;top:${ty}px" data-tip-event="${SW_EVENTS.indexOf(ev)}"><span>${ev.label}</span></div>`;
-      if (ev.major) html += `<div class="tl-guide" style="left:${px}px;top:${top.lanes}px;height:${lanesH}px"></div>`;
+    // Events, with a guide line down through the stories for major ones
+    events.forEach(({ ev, i, px, side }) => {
+      html += `<div class="tl-event${ev.major ? ' major' : ''}${side === 'left' ? ' flip' : ''}" style="left:${px}px;top:${top.events + 5}px"
+        data-tip-event="${i}">${side ? `<span>${ev.label}</span>` : ''}</div>`;
+      if (ev.major) html += `<div class="tl-guide" style="left:${px}px;top:${top.events + 24}px;height:${height - top.events - 24}px"></div>`;
     });
 
-    // Lanes
-    html += `<div style="position:absolute;left:0;right:0;top:${top.lanes}px">`;
-    items.forEach(({ item, span }, li) => {
+    // Stories
+    lanes.forEach(({ item, span, row, name, inside, nameX, isRange }) => {
       const c = eraColor(item.era);
-      html += `<div class="tl-lane" style="top:${li * ROW.lane}px;height:${ROW.lane}px;--c:${c}">`;
+      const ty = top.lanes + row * ROW.lane;
+      html += `<div class="tl-story" style="top:${ty}px;--c:${c}">`;
       const chain = span.segments.filter(s => s.kind !== 'crossover' && s.kind !== 'range').sort((a, b) => a.s - b.s);
       for (let k = 1; k < chain.length; k++) {
         const l = x(chain[k - 1].e), r = x(chain[k].s);
@@ -207,34 +271,21 @@
         const w = Math.max(6, x(seg.e) - l);
         // A crossover drawn on top of this bar hides whatever text is under it.
         const room = cross && seg !== cross && cross.s > seg.s && cross.s < seg.e ? x(cross.s) - l : w;
-        const text = seg.label || (span.segments.length === 1 ? item.title : '');
-        const fits = text && room > text.length * 6.2 + 14;
-        html += `<button class="tl-bar ${seg.kind}${span.approx ? ' approx' : ''}" style="left:${l}px;width:${w}px"
-          data-id="${item.id}" data-seg="${si}" aria-label="${item.title}${seg.label ? ', ' + seg.label : ''}">${fits ? text : ''}</button>`;
+        const text = inside ? name : (span.segments.length > 1 ? seg.label || '' : '');
+        const fits = text && room > textWidth(text, inside ? NAME_FONT : BAR_FONT) + 14;
+        html += `<button class="tl-bar ${seg.kind}${span.approx ? ' approx' : ''}${inside ? ' named' : ''}" style="left:${l}px;width:${w}px"
+          data-id="${item.id}" data-seg="${si}" aria-label="${laneTitle(item)}${seg.label ? ', ' + seg.label : ''}">${fits ? text : ''}</button>`;
       });
+      if (!inside) {
+        html += `<button class="tl-name${item.type === 'movie' ? ' film' : ''}" style="left:${isRange ? x(span.segments[0].s) : nameX}px${isRange ? ';top:-9px' : ''}"
+          data-id="${item.id}" data-seg="0" tabindex="-1">${name}</button>`;
+      }
       html += `</div>`;
     });
-    html += `</div>`;
 
     canvasEl.style.width = width + 'px';
     canvasEl.style.height = height + 'px';
     canvasEl.innerHTML = html;
-
-    // Left label column, row-for-row
-    const opts = Object.entries(SW_SCALES).filter(([k]) => k !== 'yavin')
-      .map(([k, v]) => `<option value="${k}"${k === secondary ? ' selected' : ''}>${v.label}</option>`).join('');
-    let lh = '';
-    lh += `<div class="tl-row-label head" style="height:${ROW.era}px">Canon eras</div>`;
-    lh += `<div class="tl-row-label head" style="height:${ROW.axis}px">BBY / ABY</div>`;
-    lh += `<div class="tl-row-label head" style="height:${ROW.axis2}px"><select id="tl-secondary" aria-label="Second time scale">${opts}</select></div>`;
-    lh += `<div class="tl-row-label head" style="height:${eventsH}px">Key events</div>`;
-    items.forEach(({ item, span }) => {
-      lh += `<button class="tl-row-label" style="height:${ROW.lane}px;--c:${eraColor(item.era)}" data-goto="${item.id}"
-        title="Jump to ${laneTitle(item)}"><span class="dot ${item.type}"></span>${laneTitle(item)}</button>`;
-    });
-    labelsEl.innerHTML = lh;
-    document.getElementById('tl-secondary').addEventListener('change', e => setSecondary(e.target.value));
-
     zoomEl.value = ppyToSlider(ppy);
   }
 
@@ -261,12 +312,13 @@
 
   // ---------- Presets ----------
   const PRESETS = [
-    { label: 'Full saga', from: DOMAIN_START, to: DOMAIN_END },
+    { label: 'Skywalker era', from: -42, to: 37 },
     { label: 'High Republic', from: -240, to: -95 },
     { label: 'Prequels & Clone Wars', from: -42, to: -17 },
     { label: 'Empire & Rebellion', from: -19.5, to: 5.5 },
-    { label: 'Mandalorian era (9 ABY)', from: 8.9, to: 10.75 },
+    { label: 'Mandalorian era (9 ABY)', from: 8.9, to: 10.9 },
     { label: 'Sequels', from: 27.5, to: 36.2 },
+    { label: 'Everything', from: DOMAIN_START, to: DOMAIN_END },
   ];
   function applyPreset(p) {
     const W = scrollEl.clientWidth - 20;
@@ -289,25 +341,31 @@
     presetsEl.appendChild(b);
   });
 
-  // ---------- Time scale cards ----------
+  // ---------- Second reckoning ----------
+  secondaryEl.innerHTML = '<option value="">BBY / ABY only</option>' +
+    Object.entries(SW_SCALES).filter(([k]) => k !== 'yavin')
+      .map(([k, v]) => `<option value="${k}">+ ${v.label}</option>`).join('');
   function renderScales() {
-    scalesEl.innerHTML = Object.entries(SW_SCALES).map(([k, v]) => `
-      <button class="tl-scale${k === secondary || k === 'yavin' ? ' active' : ''}" data-scale="${k}">
-        <h4>${v.label}<span class="tag">${k === 'yavin' ? 'Official · top ruler' : k === secondary ? 'Second ruler' : 'Show on ruler'}</span></h4>
-        ${v.desc}
-      </button>`).join('');
+    scalesEl.innerHTML = Object.entries(SW_SCALES).map(([k, v]) => {
+      const on = k === 'yavin' || k === secondary;
+      const tag = k === 'yavin' ? 'Official · always shown' : on ? 'Shown · click to hide' : 'Click to show';
+      return `<button class="tl-scale${on ? ' active' : ''}" data-scale="${k}">
+        <h4>${v.label}<span class="tag">${tag}</span></h4>${v.desc}</button>`;
+    }).join('');
   }
   function setSecondary(k) {
-    if (!LONG[k]) return;
-    secondary = k;
+    secondary = LONG[k] ? k : null;
+    secondaryEl.value = secondary || '';
     const left = scrollEl.scrollLeft;
     render();
     scrollEl.scrollLeft = left;
     renderScales();
   }
+  secondaryEl.addEventListener('change', () => setSecondary(secondaryEl.value));
   scalesEl.addEventListener('click', e => {
     const card = e.target.closest('[data-scale]');
-    if (card) setSecondary(card.dataset.scale);
+    if (!card || card.dataset.scale === 'yavin') return;
+    setSecondary(card.dataset.scale === secondary ? null : card.dataset.scale);
   });
 
   // ---------- Drag to pan ----------
@@ -337,22 +395,9 @@
   scrollEl.addEventListener('pointercancel', endDrag);
   scrollEl.addEventListener('click', e => {
     if (suppressClick) { suppressClick = false; e.stopPropagation(); e.preventDefault(); return; }
-    const bar = e.target.closest('.tl-bar');
+    const bar = e.target.closest('[data-id]');
     if (bar) openModal(SW_DATA.find(d => d.id === bar.dataset.id));
   }, true);
-
-  // ---------- Jump from label ----------
-  labelsEl.addEventListener('click', e => {
-    const btn = e.target.closest('[data-goto]');
-    if (!btn) return;
-    const { span } = items.find(i => i.item.id === btn.dataset.goto);
-    const s = Math.min(...span.segments.map(g => g.s));
-    const en = Math.max(...span.segments.map(g => g.e));
-    const mid = (x(s) + x(en)) / 2;
-    scrollEl.scrollTo({ left: mid - scrollEl.clientWidth / 2, behavior: 'smooth' });
-    const bars = canvasEl.querySelectorAll(`.tl-bar[data-id="${btn.dataset.goto}"]`);
-    bars.forEach(b => { b.style.filter = 'brightness(1.6)'; setTimeout(() => (b.style.filter = ''), 1200); });
-  });
 
   // ---------- Tooltips ----------
   function showTip(html, e) {
@@ -373,7 +418,7 @@
 
   canvasEl.addEventListener('pointerover', e => {
     if (drag && drag.moved) return;
-    const bar = e.target.closest('.tl-bar');
+    const bar = e.target.closest('[data-id]');
     const ev = e.target.closest('[data-tip-event]');
     const era = e.target.closest('[data-tip-era]');
     if (bar) {
@@ -383,15 +428,14 @@
       showTip(`<b>${laneTitle(it.item)}</b>
         ${seg.label ? seg.label + '<br>' : ''}
         <span class="when">${seg.kind === 'range' ? 'Spans the saga' : fmtRange(seg.s, seg.e, approx)}</span>
-        ${seg.kind === 'range' ? '' : `<br><span class="alt">${altRange(seg.s, seg.e)}</span>`}
+        ${seg.kind === 'range' ? '' : altRange(seg.s, seg.e)}
         ${it.span.note ? `<span class="note">${it.span.note}</span>` : ''}`, e);
     } else if (ev) {
       const d = SW_EVENTS[+ev.dataset.tipEvent];
-      showTip(`<b>${d.label}</b><span class="when">${d.approx ? 'c. ' : ''}${fmtYear(d.y)}</span><br>
-        <span class="alt">${altRange(d.y, d.y)}</span>`, e);
+      showTip(`<b>${d.label}</b><span class="when">${d.approx ? 'c. ' : ''}${fmtYear(d.y)}</span>${altRange(d.y, d.y)}`, e);
     } else if (era) {
       const d = SW_CANON_ERAS[+era.dataset.tipEra];
-      showTip(`<b>${d.label}</b><span class="when">${d.note || fmtRange(Math.max(d.s, -500), d.e)}</span>
+      showTip(`<b>${d.label}</b><span class="when">${d.note || fmtRange(d.s, d.e)}</span>
         <span class="note">One of Lucasfilm's official named eras.</span>`, e);
     } else hideTip();
   });
@@ -402,6 +446,8 @@
   // ---------- Init ----------
   let resizeT;
   addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(render, 120); });
+  // Label placement depends on text width, so lay out again once the web fonts arrive.
+  if (document.fonts) document.fonts.ready.then(() => render());
   window.renderTimeline = render;
   renderScales();
   render();

@@ -16,25 +16,26 @@ Imperial years. *Forces of Destiny* is parked at the end (9.9) because it
 ranges across every era rather than occupying one slot.
 
 ## Timeline view
-The page opens on an in-universe **timeline**. Every film and series is a
-lane, drawn as one or more spans: main story, flashbacks, crossovers, and
-epilogues. This is how *The Mandalorian* shows Seasons 1–2, then a gap
-filled by *The Book of Boba Fett* (whose Chapters 5–7 are marked as a
-crossover with Din Djarin), then Season 3. Above the lanes:
+The site opens on the **Archive** (the card grid). The **Timeline** tab
+next to it shows everything in in-universe order. Each film or series is
+drawn as one or more spans (main story, flashbacks, crossovers,
+epilogues) with its title beside it, and stories that don't overlap share
+a row. *The Mandalorian* shows Seasons 1–2, then a gap filled by *The Book
+of Boba Fett* (pinned directly underneath, with Chapters 5–7 marked as a
+crossover), then Season 3. Above the stories:
 - **Canon eras**: Lucasfilm's official named eras.
-- **BBY / ABY ruler**: the official dating system.
-- **A second, switchable ruler**: years from Endor, years of the Empire,
-  or years from Naboo, the relative reckonings the stories themselves use.
-- **Key events**: battles and turning points. Major ones draw a guide line
-  through every lane.
+- **BBY / ABY ruler**: the official dating system. The dropdown in the
+  toolbar (or the cards under the timeline) adds a second count under
+  each year: years from Endor, years of the Empire, or years from Naboo.
+- **Key events**: one row of markers. Major events are always labelled;
+  smaller ones get a label when there's room (zoom in) and otherwise show
+  their name on hover.
 
 Everything older than 45 BBY (the High Republic) is drawn on a compressed
 scale. Use the preset buttons, the zoom slider, or Ctrl/⌘ + scroll to
-zoom, and drag to pan. Hover any bar or event for dates and notes, and
-click a bar to open its entry. Spans, events, and eras are all defined in
-`data.js` (`SW_SPANS`, `SW_EVENTS`, `SW_CANON_ERAS`, `SW_SCALES`).
-
-The **Archive** tab is the original card grid with filters.
+zoom, and drag to pan. Click any story to open its entry. Spans, events,
+and eras are all defined in `data.js` (`SW_SPANS`, `SW_EVENTS`,
+`SW_CANON_ERAS`, `SW_SCALES`).
 
 ## How to open it
 Just open `index.html` in any modern browser. No build step, no server

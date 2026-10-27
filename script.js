@@ -285,4 +285,4 @@ viewTabs.forEach(t => t.addEventListener('click', () => {
 // ---------------- Init ----------------
 buildFilters();
 renderGrid();
-showView(location.hash === '#archive' ? 'archive' : 'timeline');
+showView(location.hash === '#timeline' ? 'timeline' : 'archive');

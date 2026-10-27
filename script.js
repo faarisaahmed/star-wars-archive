@@ -31,8 +31,37 @@ const resultCount = document.getElementById('result-count');
 
 let activeFilter = 'all';
 
+function eraInfo(era) {
+  return SW_ERAS[era] || SW_MULTI_ERA;
+}
 function eraColor(era) {
-  return (SW_ERAS[era] && SW_ERAS[era].color) || '#e8c468';
+  return eraInfo(era).color;
+}
+
+// ---------------- In-universe dates ----------------
+// Timeline positions are "year index" numbers: n BBY → -n, n ABY → +n
+// (see SW_SPANS in data.js). Shared with timeline.js.
+const yearIndex = y => Math.floor(y + 1e-9);
+function fmtYear(y) {
+  const i = yearIndex(y);
+  return i <= 0 ? `${-i} BBY` : `${i} ABY`;
+}
+function fmtRange(s, e, approx) {
+  const c = approx ? 'c. ' : '';
+  const a = yearIndex(s), b = yearIndex(e);
+  if (a === b) return c + fmtYear(s);
+  // Same era suffix: "22–19 BBY"
+  if (a <= 0 && b <= 0) return `${c}${-a}–${-b} BBY`;
+  if (a > 0 && b > 0) return `${c}${a}–${b} ABY`;
+  return `${c}${fmtYear(s)} – ${fmtYear(e)}`;
+}
+// When an entry is set, e.g. "22–19 BBY" or "c. 9 ABY".
+function settingOf(item) {
+  const span = SW_SPANS[item.id];
+  if (!span) return '';
+  if (span.segments.every(g => g.kind === 'range')) return 'Every era';
+  const segs = span.segments.filter(g => g.kind !== 'range');
+  return fmtRange(Math.min(...segs.map(g => g.s)), Math.max(...segs.map(g => g.e)), span.approx);
 }
 
 function sortedData() {
@@ -86,7 +115,7 @@ function renderCard(item) {
   card.setAttribute('aria-label', `${item.title} — open details`);
   card.innerHTML = `
     <div class="card-art">
-      <span class="card-order">${typeof item.order === 'number' ? '№ ' + item.order.toFixed(1).replace('.0','') : ''}</span>
+      <span class="card-order">${settingOf(item)}</span>
       <span class="card-type-tag">${item.type}</span>
       <span style="color:${color}">${iconFor(item)}</span>
     </div>
@@ -108,8 +137,9 @@ function openModal(item) {
   if (item.creator) metaBits.push(`<b>Creator</b> ${item.creator}`);
   if (item.runtime) metaBits.push(`<b>Runtime</b> ${item.runtime}`);
   if (item.seasons) metaBits.push(`<b>${item.seasons}</b>`);
-  metaBits.push(`<b>Year</b> ${item.year}`);
-  metaBits.push(`<b>Era</b> ${SW_ERAS[item.era]?.label || ''}`);
+  metaBits.push(`<b>Released</b> ${item.year}`);
+  if (SW_SPANS[item.id]) metaBits.push(`<b>Set in</b> ${settingOf(item)}`);
+  metaBits.push(`<b>Era</b> ${eraInfo(item.era).label}`);
 
   modalContent.innerHTML = `
     <div class="modal-art" style="color:${color}">${iconFor(item)}</div>
@@ -120,11 +150,19 @@ function openModal(item) {
       <div class="modal-meta">${metaBits.map(m => `<span>${m}</span>`).join('')}</div>
       <p class="modal-summary">${item.summary}</p>
       <div class="modal-tags">${(item.tags || []).map(t => `<span>${t}</span>`).join('')}</div>
+      ${SW_SPANS[item.id] ? `<button class="modal-goto" id="modal-goto">Show on timeline →</button>` : ''}
     </div>
   `;
   modalOverlay.classList.add('open');
   document.body.style.overflow = 'hidden';
   document.getElementById('modal-close').addEventListener('click', closeModal);
+  const goto = document.getElementById('modal-goto');
+  if (goto) goto.addEventListener('click', () => {
+    closeModal();
+    history.replaceState(null, '', '#timeline');
+    showView('timeline');
+    window.focusTimeline(item.id);
+  });
   modalOverlay.focus();
 }
 
@@ -200,9 +238,17 @@ function stopTheme() {
   themeAudio.volume = TARGET_VOLUME;
 }
 
+// The intro plays once. After that the site opens straight into the
+// archive; "Replay intro" in the header brings it back.
+const CRAWL_SEEN_KEY = 'sw-crawl-seen';
+function markCrawlSeen() {
+  try { localStorage.setItem(CRAWL_SEEN_KEY, '1'); } catch (e) { /* storage blocked: intro just plays again */ }
+}
+
 function skipCrawl(quick) {
   if (!crawlActive) return;
   crawlActive = false;
+  markCrawlSeen();
   if (crawlRAF) cancelAnimationFrame(crawlRAF);
   const screen = document.getElementById('crawl-screen');
   const fadeMs = quick ? SKIP_FADE_MS : END_FADE_MS;
@@ -264,6 +310,15 @@ function beginCrawl() {
 beginPrompt.addEventListener('click', beginCrawl);
 beginPrompt.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' || e.key === ' ') beginCrawl();
+});
+
+if (document.documentElement.classList.contains('crawl-seen')) {
+  crawlActive = false;
+  crawlScreen.remove();
+}
+document.getElementById('replay-intro').addEventListener('click', () => {
+  try { localStorage.removeItem(CRAWL_SEEN_KEY); } catch (e) {}
+  location.reload();
 });
 
 // ---------------- View tabs ----------------

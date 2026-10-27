@@ -9,6 +9,11 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;900&family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
+<script>
+  // Skip the intro on return visits (see script.js). Runs before the page
+  // paints so the crawl screen never flashes up.
+  try { if (localStorage.getItem('sw-crawl-seen')) document.documentElement.classList.add('crawl-seen'); } catch (e) {}
+</script>
 </head>
 <body>
 
@@ -61,6 +66,7 @@
 </div>
 
 <header class="site-header">
+  <button id="replay-intro" class="replay-intro">▶ Replay intro</button>
   <h1 class="site-title">THE CANON ARCHIVE</h1>
   <div class="site-subtitle">Every Film &amp; Series · Official Canon Only</div>
   <div class="header-rule"></div>
@@ -90,7 +96,7 @@
     </div>
   </div>
   <div class="timeline" id="timeline">
-    <div class="tl-scroll" id="tl-scroll"><div class="tl-canvas" id="tl-canvas"></div></div>
+    <div class="tl-scroll" id="tl-scroll" tabindex="0" aria-label="Timeline. Use left and right arrows to pan, plus and minus to zoom."><div class="tl-canvas" id="tl-canvas"></div></div>
   </div>
   <div class="tl-legend">
     <span><i class="lg lg-main"></i>Main story</span>
@@ -100,7 +106,7 @@
     <span><i class="lg lg-range"></i>Spread across eras</span>
     <span><b>c.</b> approximate date</span>
     <span>Stories set in the same year are ordered by plot, not exact dates</span>
-    <span class="tl-hint">Click any story for details · Drag to pan · Ctrl/⌘ + scroll to zoom</span>
+    <span class="tl-hint">Click any story for details · Drag or ←/→ to pan · Ctrl/⌘ + scroll, pinch or +/− to zoom</span>
   </div>
   <div class="tl-scales" id="tl-scales"></div>
   <div id="tl-tip" role="tooltip"></div>

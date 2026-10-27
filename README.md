@@ -32,10 +32,16 @@ crossover), then Season 3. Above the stories:
   their name on hover.
 
 Everything older than 45 BBY (the High Republic) is drawn on a compressed
-scale. Use the preset buttons, the zoom slider, or Ctrl/⌘ + scroll to
-zoom, and drag to pan. Click any story to open its entry. Spans, events,
+scale. Zoom with the preset buttons, the slider, Ctrl/⌘ + scroll, a
+pinch on touch screens, or +/− on the keyboard. Pan by dragging or with
+←/→. Click any story to open its entry; every entry's popup also has a
+**Show on timeline** button that jumps to and highlights it.
+
+Eras throughout the site (archive filters, colours, the era band) are
+Lucasfilm's official ones. Archive cards show when each story is set,
+e.g. "22–19 BBY", with "c." for approximate dates. Spans, events,
 and eras are all defined in `data.js` (`SW_SPANS`, `SW_EVENTS`,
-`SW_CANON_ERAS`, `SW_SCALES`).
+`SW_ERAS`, `SW_SCALES`).
 
 ## How to open it
 Just open `index.html` in any modern browser. No build step, no server
@@ -63,6 +69,8 @@ guessing games:
   pace (`SECONDS_PER_LINE` in `script.js`). As soon as the last line has
   receded into the distance, the music and screen fade out together over
   2.5 seconds. Nothing plays after the text is gone.
+- The intro only plays on the first visit (remembered in the browser's
+  local storage). "Replay intro" in the top-right corner brings it back.
 - Hitting "Skip Intro" cuts it with a quick ~0.4 second fade instead of
   an abrupt stop.
 

@@ -25,7 +25,6 @@
   const MAX_PPY = 1500;
 
   const ROW = { era: 26, axis: 30, axis2: 14, events: 30, lane: 30 };
-  const ERA_COLORS = ['#7dd3fc', '#e8c468', '#a78bfa', '#ff8c42', '#8fd694', '#ff5c5c'];
 
   let ppy = 10;            // pixels per year in the main (uncompressed) region
   let secondary = null;    // optional second reckoning shown under the BBY/ABY labels
@@ -55,20 +54,8 @@
   const EVENT_FONT = "500 13px 'Barlow Condensed', sans-serif";
 
   // ---------- Formatting ----------
-  const idx = y => Math.floor(y + 1e-9);
-  function fmtYear(y) {
-    const i = idx(y);
-    return i <= 0 ? `${-i} BBY` : `${i} ABY`;
-  }
-  function fmtRange(s, e, approx) {
-    const c = approx ? 'c. ' : '';
-    const a = idx(s), b = idx(e);
-    if (a === b) return c + fmtYear(s);
-    // Same era suffix: "22–19 BBY"
-    if (a <= 0 && b <= 0) return `${c}${-a}–${-b} BBY`;
-    if (a > 0 && b > 0) return `${c}${a}–${b} ABY`;
-    return `${c}${fmtYear(s)} – ${fmtYear(e)}`;
-  }
+  // fmtYear / fmtRange / yearIndex are shared from script.js.
+  const idx = yearIndex;
   // Longer phrasing of the alternative reckonings, for tooltips.
   const LONG = {
     endor: i => { const d = i - 4; return d === 0 ? 'Year of Endor' : d < 0 ? `${-d} yr${d === -1 ? '' : 's'} before Endor` : `${d} yr${d === 1 ? '' : 's'} after Endor`; },
@@ -99,8 +86,6 @@
       isRange: span.segments.every(g => g.kind === 'range'),
     };
   });
-
-  const eraColor = era => (SW_ERAS[era] && SW_ERAS[era].color) || '#e8c468';
 
   // ---------- Layout ----------
   // Row packing: each story takes the first row where it (and its label)
@@ -238,10 +223,10 @@
     let html = gridHTML(top.events, height - top.events);
 
     // Canon eras
-    SW_CANON_ERAS.forEach((era, i) => {
+    Object.entries(SW_ERAS).forEach(([key, era]) => {
       const l = x(era.s), r = x(Math.min(era.e, DOMAIN_END));
-      html += `<div class="tl-era" style="left:${l}px;width:${r - l}px;top:${top.era + 4}px;--c:${ERA_COLORS[i % ERA_COLORS.length]}"
-        data-tip-era="${i}"><span>${era.label}</span></div>`;
+      html += `<div class="tl-era" style="left:${l}px;width:${r - l}px;top:${top.era + 4}px;--c:${era.color}"
+        data-tip-era="${key}"><span>${era.label}</span></div>`;
     });
 
     // Axis (with the optional second reckoning under each label)
@@ -251,7 +236,7 @@
     // Events, with a guide line down through the stories for major ones
     events.forEach(({ ev, i, px, side }) => {
       html += `<div class="tl-event${ev.major ? ' major' : ''}${side === 'left' ? ' flip' : ''}" style="left:${px}px;top:${top.events + 5}px"
-        data-tip-event="${i}">${side ? `<span>${ev.label}</span>` : ''}</div>`;
+        data-tip-event="${i}" tabindex="0" role="img" aria-label="${ev.label}, ${fmtYear(ev.y)}">${side ? `<span>${ev.label}</span>` : ''}</div>`;
       if (ev.major) html += `<div class="tl-guide" style="left:${px}px;top:${top.events + 24}px;height:${height - top.events - 24}px"></div>`;
     });
 
@@ -416,32 +401,104 @@
   }
   function hideTip() { tipEl.classList.remove('show'); }
 
-  canvasEl.addEventListener('pointerover', e => {
-    if (drag && drag.moved) return;
-    const bar = e.target.closest('[data-id]');
-    const ev = e.target.closest('[data-tip-event]');
-    const era = e.target.closest('[data-tip-era]');
+  // Tooltip content for whatever is under the pointer (or focused).
+  function tipFor(target) {
+    const bar = target.closest('[data-id]');
+    const ev = target.closest('[data-tip-event]');
+    const era = target.closest('[data-tip-era]');
     if (bar) {
       const it = items.find(i => i.item.id === bar.dataset.id);
       const seg = it.span.segments[+bar.dataset.seg];
       const approx = it.span.approx;
-      showTip(`<b>${laneTitle(it.item)}</b>
+      return `<b>${laneTitle(it.item)}</b>
         ${seg.label ? seg.label + '<br>' : ''}
         <span class="when">${seg.kind === 'range' ? 'Spans the saga' : fmtRange(seg.s, seg.e, approx)}</span>
         ${seg.kind === 'range' ? '' : altRange(seg.s, seg.e)}
-        ${it.span.note ? `<span class="note">${it.span.note}</span>` : ''}`, e);
-    } else if (ev) {
+        ${it.span.note ? `<span class="note">${it.span.note}</span>` : ''}`;
+    }
+    if (ev) {
       const d = SW_EVENTS[+ev.dataset.tipEvent];
-      showTip(`<b>${d.label}</b><span class="when">${d.approx ? 'c. ' : ''}${fmtYear(d.y)}</span>${altRange(d.y, d.y)}`, e);
-    } else if (era) {
-      const d = SW_CANON_ERAS[+era.dataset.tipEra];
-      showTip(`<b>${d.label}</b><span class="when">${d.note || fmtRange(d.s, d.e)}</span>
-        <span class="note">One of Lucasfilm's official named eras.</span>`, e);
-    } else hideTip();
+      return `<b>${d.label}</b><span class="when">${d.approx ? 'c. ' : ''}${fmtYear(d.y)}</span>${altRange(d.y, d.y)}`;
+    }
+    if (era) {
+      const d = SW_ERAS[era.dataset.tipEra];
+      return `<b>${d.label}</b><span class="when">${d.note || fmtRange(d.s, d.e)}</span>
+        <span class="note">One of Lucasfilm's official named eras.</span>`;
+    }
+    return null;
+  }
+  canvasEl.addEventListener('pointerover', e => {
+    if (drag && drag.moved) return;
+    const html = tipFor(e.target);
+    if (html) showTip(html, e); else hideTip();
   });
+  // Keyboard focus gets the same tooltip, anchored under the element.
+  canvasEl.addEventListener('focusin', e => {
+    const html = tipFor(e.target);
+    if (!html) return;
+    const r = e.target.getBoundingClientRect();
+    showTip(html, { clientX: r.left, clientY: r.bottom });
+  });
+  canvasEl.addEventListener('focusout', hideTip);
   canvasEl.addEventListener('pointermove', e => { if (tipEl.classList.contains('show')) moveTip(e); });
   canvasEl.addEventListener('pointerleave', hideTip);
   scrollEl.addEventListener('scroll', hideTip, { passive: true });
+
+  // ---------- Keyboard ----------
+  // With the timeline focused: ←/→ pan, +/− zoom, Home/End jump to the ends.
+  scrollEl.addEventListener('keydown', e => {
+    if (e.target.tagName === 'BUTTON' && (e.key === 'Enter' || e.key === ' ')) return;
+    const step = scrollEl.clientWidth * 0.25;
+    const actions = {
+      ArrowLeft: () => scrollEl.scrollBy({ left: -step, behavior: 'smooth' }),
+      ArrowRight: () => scrollEl.scrollBy({ left: step, behavior: 'smooth' }),
+      Home: () => { scrollEl.scrollLeft = 0; },
+      End: () => { scrollEl.scrollLeft = scrollEl.scrollWidth; },
+      '+': () => zoomTo(ppy * 1.6), '=': () => zoomTo(ppy * 1.6),
+      '-': () => zoomTo(ppy / 1.6), '_': () => zoomTo(ppy / 1.6),
+    };
+    if (!actions[e.key]) return;
+    e.preventDefault();
+    actions[e.key]();
+  });
+
+  // ---------- Pinch to zoom (touch) ----------
+  let pinch = null;
+  const touchMid = t => (t[0].clientX + t[1].clientX) / 2 - scrollEl.getBoundingClientRect().left;
+  const touchDist = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+  scrollEl.addEventListener('touchstart', e => {
+    if (e.touches.length === 2) pinch = { dist: touchDist(e.touches), ppy };
+  }, { passive: true });
+  scrollEl.addEventListener('touchmove', e => {
+    if (!pinch || e.touches.length !== 2) return;
+    e.preventDefault();
+    zoomTo(pinch.ppy * touchDist(e.touches) / pinch.dist, touchMid(e.touches));
+  }, { passive: false });
+  scrollEl.addEventListener('touchend', e => { if (e.touches.length < 2) pinch = null; });
+
+  // ---------- Jump to an entry (from the archive's "Show on timeline") ----------
+  function focusTimeline(id) {
+    const it = items.find(i => i.item.id === id);
+    if (!it) return;
+    const segs = it.span.segments;
+    // Ranges (Forces of Destiny) show the whole saga; anything else is
+    // zoomed to fit with some context either side, but never so far in
+    // that a one-day film fills the screen.
+    let from = it.start, to = it.end;
+    if (it.isRange) { from = -42; to = 37; }
+    const pad = Math.max(1.5, (to - from) * 0.25);
+    const W = scrollEl.clientWidth - 40;
+    applyPreset({ from: from - pad, to: to + pad });
+    if (W / ppy < 4) { zoomTo(W / 4); }
+    const mid = (x(from) + x(to)) / 2;
+    scrollEl.scrollLeft = mid - scrollEl.clientWidth / 2;
+    document.getElementById('timeline').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const bars = canvasEl.querySelectorAll(`.tl-bar[data-id="${id}"]`);
+    bars.forEach(b => b.classList.add('flash'));
+    setTimeout(() => bars.forEach(b => b.classList.remove('flash')), 2400);
+    if (bars[0]) bars[0].focus({ preventScroll: true });
+  }
+  window.focusTimeline = focusTimeline;
 
   // ---------- Init ----------
   let resizeT;

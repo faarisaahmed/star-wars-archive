@@ -241,7 +241,25 @@ body {
   color: var(--gold);
 }
 
+.crawl-seen #crawl-screen { display: none; }
+
 /* -------------------- Header -------------------- */
+.replay-intro {
+  position: absolute;
+  top: 18px;
+  right: 20px;
+  background: transparent;
+  border: 1px solid var(--panel-line);
+  color: var(--muted);
+  font-family: var(--font-ui);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 7px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+}
+.replay-intro:hover { color: var(--gold); border-color: var(--gold); }
 header.site-header {
   padding: 90px 6vw 40px;
   text-align: center;
@@ -534,6 +552,14 @@ main {
   margin-bottom: 14px;
 }
 .tl-presets { display: flex; flex-wrap: wrap; gap: 8px; }
+@media (max-width: 640px) {
+  /* One swipeable row of presets instead of four wrapped lines */
+  .tl-presets { flex-wrap: nowrap; overflow-x: auto; width: 100%; padding-bottom: 4px; scrollbar-width: none; }
+  .tl-presets button { flex: 0 0 auto; }
+  .tl-zoom { width: 100%; }
+  .tl-zoom input { flex: 1; width: auto; }
+  .replay-intro { top: 12px; right: 12px; }
+}
 .tl-presets button { font-size: 0.78rem; padding: 7px 14px; }
 .tl-zoom { display: flex; align-items: center; gap: 8px; }
 .tl-zoom button {
@@ -567,6 +593,14 @@ main {
   scrollbar-color: rgba(232,196,104,0.35) transparent;
 }
 .tl-scroll.dragging { cursor: grabbing; user-select: none; }
+.tl-scroll { touch-action: pan-x pan-y; }
+.tl-scroll:focus-visible { outline-offset: -2px; }
+.tl-event:focus-visible { outline-offset: 3px; border-radius: 3px; }
+.tl-bar.flash { animation: barFlash 0.8s ease-in-out 3; z-index: 4; }
+@keyframes barFlash {
+  0%, 100% { filter: none; }
+  50% { filter: brightness(1.7); box-shadow: 0 0 0 3px var(--gold-bright), 0 0 18px var(--gold-bright); }
+}
 .tl-canvas { position: relative; }
 
 .tl-era {
@@ -808,6 +842,22 @@ main {
 @media (max-width: 640px) {
   .tl-hint { margin-left: 0; }
 }
+
+.modal-goto {
+  margin-top: 22px;
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  background: var(--card-color);
+  color: #0a0a10;
+  border: 0;
+  border-radius: 30px;
+  padding: 11px 20px;
+  cursor: pointer;
+  font-weight: 700;
+}
+.modal-goto:hover { filter: brightness(1.15); }
 
 /* -------------------- Footer -------------------- */
 footer {

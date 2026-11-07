@@ -43,6 +43,26 @@ e.g. "22–19 BBY", with "c." for approximate dates. Spans, events,
 and eras are all defined in `data.js` (`SW_SPANS`, `SW_EVENTS`,
 `SW_ERAS`, `SW_SCALES`).
 
+## Watch Order
+The **Watch Order** tab lists every film and series in story order, with
+a checkbox for each one. Shows are split wherever something else slots
+in between or their episodes jump around:
+- *The Clone Wars* follows Lucasfilm's official chronological episode
+  order (which jumps between seasons), with the 2008 film and Ahsoka's
+  *Tales of the Jedi* episode in their places. *Revenge of the Sith* sits
+  just before the last two episodes of the Siege of Mandalore.
+- *The Mandalorian* Seasons 1–2 → *The Book of Boba Fett* → Season 3.
+- *Tales of the Jedi*, *Tales of the Underworld* and *Andor* are split
+  where their stories jump years.
+
+Click the counter on a show (e.g. "0/8") to expand it and tick off single
+episodes. Ticking the show itself marks every episode. Progress, an "Up
+next" shortcut and a "Hide watched" filter sit at the top. Your ticks are
+saved in the browser's local storage, so they stay put between visits
+(they're per browser and per address, so `localhost:8000` and opening the
+file directly keep separate lists). The list lives in `SW_WATCH` in
+`data.js`.
+
 ## How to open it
 Just open `index.html` in any modern browser. No build step, no server
 required (though if your browser blocks local scripts, run a quick local
@@ -55,6 +75,7 @@ server: `python3 -m http.server` from this folder, then visit
 - `data.js` — every entry's title, year, director/creator, summary, tags
 - `script.js` — card grid, filtering, detail modal, opening crawl, tabs
 - `timeline.js` — the timeline view
+- `watch.js` — the Watch Order checklist
 - `media/` — empty on purpose, see below
 
 ## Adding the theme music

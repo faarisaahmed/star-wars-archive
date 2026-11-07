@@ -75,6 +75,7 @@
 <nav class="view-tabs" role="tablist" aria-label="View">
   <button class="view-tab active" role="tab" data-view="archive" aria-selected="true">Archive</button>
   <button class="view-tab" role="tab" data-view="timeline" aria-selected="false">Timeline</button>
+  <button class="view-tab" role="tab" data-view="watch" aria-selected="false">Watch Order</button>
 </nav>
 
 <section id="view-archive" class="view">
@@ -113,6 +114,21 @@
 </section>
 
 
+<section id="view-watch" class="view" hidden>
+  <div class="w-intro">
+    <p>Every film and series in story order. Shows are split wherever something else fits in between (like The Book of Boba Fett between Mandalorian Seasons 2 and 3) or where their episodes jump around (The Clone Wars). Expand a show to tick off single episodes. Your progress is saved in this browser.</p>
+  </div>
+  <div class="w-toolbar">
+    <div class="w-progress" id="watch-progress"></div>
+    <div class="w-actions">
+      <label class="w-hide"><input type="checkbox" id="watch-hide"> Hide watched</label>
+      <button id="watch-reset" class="w-reset">Reset progress</button>
+    </div>
+  </div>
+  <div class="w-next" id="watch-next"></div>
+  <ol class="w-list" id="watch-list"></ol>
+</section>
+
 <div id="modal-overlay" tabindex="-1">
   <div class="modal" id="modal-content" role="dialog" aria-modal="true"></div>
 </div>
@@ -125,5 +141,6 @@
 <script src="data.js"></script>
 <script src="script.js"></script>
 <script src="timeline.js"></script>
+<script src="watch.js"></script>
 </body>
 </html>

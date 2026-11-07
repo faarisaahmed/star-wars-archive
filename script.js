@@ -340,4 +340,5 @@ viewTabs.forEach(t => t.addEventListener('click', () => {
 // ---------------- Init ----------------
 buildFilters();
 renderGrid();
-showView(location.hash === '#timeline' ? 'timeline' : 'archive');
+const initialView = location.hash.slice(1);
+showView(['timeline', 'watch'].includes(initialView) ? initialView : 'archive');

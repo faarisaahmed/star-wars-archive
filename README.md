@@ -45,15 +45,19 @@ and eras are all defined in `data.js` (`SW_SPANS`, `SW_EVENTS`,
 
 ## Watch Order
 The **Watch Order** tab lists every film and series in story order, with
-a checkbox for each one. Shows are split wherever something else slots
-in between or their episodes jump around:
-- *The Clone Wars* follows Lucasfilm's official chronological episode
-  order (which jumps between seasons), with the 2008 film and Ahsoka's
-  *Tales of the Jedi* episode in their places. *Revenge of the Sith* sits
-  just before the last two episodes of the Siege of Mandalore.
-- *The Mandalorian* Seasons 1–2 → *The Book of Boba Fett* → Season 3.
-- *Tales of the Jedi*, *Tales of the Underworld* and *Andor* are split
-  where their stories jump years.
+a checkbox for each one. Each story appears only once:
+- A show is split into rows only when another *show* fits between its
+  seasons: *The Mandalorian* Seasons 1–2 → *The Book of Boba Fett* →
+  Season 3, and *Andor* Season 1 → *Rebels* → Season 2.
+- A *film* that happens partway through a show goes inside that show's
+  episode list instead of splitting it. *The Clone Wars* (in Lucasfilm's
+  official chronological episode order, which jumps between seasons)
+  includes the 2008 film near the start and *Revenge of the Sith* just
+  before its last two episodes. *Resistance* includes *The Force Awakens*
+  and *The Last Jedi* between its seasons.
+- Anthologies whose shorts jump across decades (*Tales of the Jedi*,
+  *Tales of the Underworld*) are kept together in one row each, with a
+  note on when each part is set.
 
 Click the counter on a show (e.g. "0/8") to expand it and tick off single
 episodes. Ticking the show itself marks every episode. Progress, an "Up

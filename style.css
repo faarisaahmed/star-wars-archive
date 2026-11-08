@@ -1032,6 +1032,34 @@ footer {
   color: var(--c);
 }
 .w-ep-note { flex-basis: 100%; padding-left: 96px; font-size: 0.85rem; color: var(--muted); }
+.w-includes { flex-basis: 100%; color: var(--ice); opacity: 0.8; }
+.w-includes i { font-style: normal; color: var(--gold); }
+.w-ep.film {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 4px -10px;
+  padding: 0 10px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--c) 12%, transparent);
+  border-left: 3px solid var(--c);
+}
+.w-ep.film label { flex: 1; border-top: 0; }
+.w-ep.film + .w-ep label { border-top: 0; }
+.w-ep.film .w-badge { color: var(--c); text-transform: uppercase; letter-spacing: 0.08em; }
+.w-ep.film .w-ep-title { font-weight: 600; color: color-mix(in srgb, var(--c) 55%, #fff); }
+.w-ep-info {
+  flex: 0 0 auto;
+  background: none;
+  border: 1px solid var(--panel-line);
+  border-radius: 30px;
+  padding: 3px 10px;
+  color: var(--muted);
+  font-family: var(--font-ui);
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.w-ep-info:hover { color: var(--gold); border-color: var(--gold); }
 .w-ep.done .w-ep-title { color: var(--muted); text-decoration: line-through; text-decoration-color: rgba(136,144,164,0.6); }
 
 @media (max-width: 640px) {

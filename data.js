@@ -556,10 +556,11 @@ const SW_SCALES = {
 
 // =========================================================
 // WATCH ORDER
-// The Watch Order tab: every film and series in in-universe order, with
-// shows split wherever something else slots in between (Mandalorian S2 →
-// Book of Boba Fett → Mandalorian S3) or their own episodes jump around
-// (The Clone Wars). Each step can list episodes to tick off one by one.
+// The Watch Order tab: every film and series in in-universe order. A show
+// is split into rows only when another *show* slots in between
+// (Mandalorian S2 → Book of Boba Fett → Mandalorian S3). A *film* that
+// happens partway through a show goes inside that show's episode list
+// instead, so nothing appears twice. Each step can list episodes to tick off one by one.
 //
 //   ref   — SW_DATA id (title, era colour, details popup)
 //   title — overrides the SW_DATA title
@@ -570,6 +571,9 @@ const SW_SCALES = {
 //   eps   — [code, title, note?]. Codes like "S2E16", "E3", "CH5" or "S1"
 //           become the badge ("S2 E16", "Ep 3", "Ch. 5", "S1"). A code
 //           with a colon ("totj:E5") belongs to another show's list.
+//           "@id" puts a film (SW_DATA id) inside the list: films that
+//           happen partway through a show sit in its episode list once,
+//           instead of splitting the show into rows on either side.
 //
 // Ticked state is saved in the browser (localStorage) under keys built
 // from step ids and episode codes, so keep those stable when editing.
@@ -584,22 +588,13 @@ const SW_WATCH = [
       ["E4", "Day"], ["E5", "Night"], ["E6", "Teach / Corrupt"],
       ["E7", "Choice", "Flashback: the same night as Ep 3, from the Jedi's side"], ["E8", "The Acolyte"],
     ] },
-  { id: "totu-bane", ref: "series-totu", part: "Cad Bane's episodes", when: "c. 47–33 BBY",
-    note: "Cad Bane's half of the anthology is set decades before The Phantom Menace. Ventress's half comes after Revenge of the Sith." },
-  { id: "totj-early", ref: "series-totj", part: "Episodes 1–3", when: "c. 54–36 BBY", show: "totj",
-    note: "Ahsoka's birth and Count Dooku's last years as a Jedi.",
-    eps: [["E1", "Life and Death"], ["E2", "Justice"], ["E3", "Choices"]] },
   { id: "tpm", ref: "tpm" },
-  { id: "totj-sith", ref: "series-totj", part: "Episode 4", when: "32 BBY", show: "totj",
-    note: "Dooku after The Phantom Menace.",
-    eps: [["E4", "The Sith Lord"]] },
   { id: "aotc", ref: "aotc" },
-  { id: "tcw", ref: "series-tcw", part: "Chronological order · up to S7 E10", when: "22–19 BBY", show: "tcw",
-    note: "Lucasfilm's official chronological order, which jumps between seasons. Includes the 2008 film and Ahsoka's Tales of the Jedi episode.",
+  { id: "tcw", ref: "series-tcw", part: "Chronological order", when: "22–19 BBY", show: "tcw",
+    note: "Lucasfilm's official chronological order, which jumps between seasons. The final arc, the Siege of Mandalore, happens at the same time as Revenge of the Sith, so the film sits just before Order 66.",
     eps: [
       ["S2E16", "Cat and Mouse"], ["S1E16", "Hidden Enemy"],
-      ["film", "Star Wars: The Clone Wars", "The 2008 film"],
-      ["totj:E5", "Practice Makes Perfect", "From Tales of the Jedi"],
+      ["@tcw-film", "The Clone Wars (2008 film)", "Introduces Ahsoka"],
       ["S3E1", "Clone Cadets"], ["S3E3", "Supply Lines"],
       ["S1E1", "Ambush"], ["S1E2", "Rising Malevolence"], ["S1E3", "Shadow of Malevolence"],
       ["S1E4", "Destroy Malevolence"], ["S1E5", "Rookies"], ["S1E6", "Downfall of a Droid"],
@@ -646,20 +641,27 @@ const SW_WATCH = [
       ["S7E7", "Dangerous Debt"], ["S7E8", "Together Again"],
       ["S7E9", "Old Friends Not Forgotten", "Siege of Mandalore begins, alongside the opening of Revenge of the Sith"],
       ["S7E10", "The Phantom Apprentice"],
+      ["@rots", "", "Watch here: the last two episodes are Order 66 from Ahsoka and Rex's side"],
+      ["S7E11", "Shattered"], ["S7E12", "Victory and Death"],
     ] },
-  { id: "rots", ref: "rots",
-    note: "The Siege of Mandalore happens at the same time. Watching the film here keeps Order 66 for the last two Clone Wars episodes." },
-  { id: "tcw-end", ref: "series-tcw", part: "Siege of Mandalore finale", when: "19 BBY", show: "tcw",
-    note: "Order 66, from Ahsoka and Rex's side.",
-    eps: [["S7E11", "Shattered"], ["S7E12", "Victory and Death"]] },
-  { id: "totj-resolve", ref: "series-totj", part: "Episode 6", when: "19 BBY", show: "totj",
-    eps: [["E6", "Resolve"]] },
+  { id: "totj", ref: "series-totj", when: "c. 54–19 BBY", show: "totj",
+    note: "Six shorts that jump across decades, so they're best watched together here, after Order 66 (where the last one is set).",
+    eps: [
+      ["E1", "Life and Death", "Ahsoka's birth"],
+      ["E2", "Justice", "Dooku's last years as a Jedi"],
+      ["E3", "Choices", "Dooku's last years as a Jedi"],
+      ["E4", "The Sith Lord", "Dooku, around The Phantom Menace"],
+      ["E5", "Practice Makes Perfect", "Ahsoka's training during the Clone Wars"],
+      ["E6", "Resolve", "Ahsoka just after Order 66"],
+    ] },
   { id: "tote", ref: "series-tote", when: "c. 20–18 BBY",
     note: "Morgan Elsbeth's episodes start during the Clone Wars and end shortly before The Mandalorian. Barriss Offee's follow the early Empire.",
     eps: [["morgan", "Morgan Elsbeth's episodes"], ["barriss", "Barriss Offee's episodes"]] },
   { id: "badbatch", ref: "series-badbatch", when: "19–18 BBY",
     eps: [["S1", "Season 1", "16 episodes"], ["S2", "Season 2", "16 episodes"], ["S3", "Season 3", "15 episodes"]] },
-  { id: "totu-ventress", ref: "series-totu", part: "Asajj Ventress's episodes", when: "c. 19–16 BBY" },
+  { id: "totu", ref: "series-totu", when: "c. 47–16 BBY", show: "totu",
+    note: "Two halves: Cad Bane's episodes are set decades earlier, Ventress's pick up after Order 66.",
+    eps: [["ventress", "Asajj Ventress's episodes", "After Order 66"], ["bane", "Cad Bane's episodes", "Years before The Phantom Menace"]] },
   { id: "maul", ref: "series-maul", when: "c. 18 BBY" },
   { id: "solo", ref: "solo" },
   { id: "obiwan", ref: "series-obiwan", when: "9 BBY", show: "obiwan",
@@ -720,12 +722,14 @@ const SW_WATCH = [
       ["E7", "Part Seven: Dreams and Madness"], ["E8", "Part Eight: The Jedi, the Witch, and the Warlord"],
     ] },
   { id: "mandogrogu", ref: "mandogrogu" },
-  { id: "resistance-s1", ref: "series-resistance", part: "Season 1", when: "34 ABY",
-    note: "Starts about six months before The Force Awakens; the finale happens alongside it." },
-  { id: "tfa", ref: "tfa" },
-  { id: "tlj", ref: "tlj" },
-  { id: "resistance-s2", ref: "series-resistance", part: "Season 2", when: "34 ABY",
-    note: "Runs alongside The Last Jedi and ends just after it." },
+  { id: "resistance", ref: "series-resistance", when: "34 ABY", show: "resistance",
+    note: "Season 1 starts about six months before The Force Awakens; Season 2 runs alongside The Last Jedi.",
+    eps: [
+      ["S1", "Season 1", "21 episodes"],
+      ["@tfa", "", "Happens alongside the end of Season 1"],
+      ["@tlj", "", "Season 2 runs alongside it"],
+      ["S2", "Season 2", "19 episodes"],
+    ] },
   { id: "tros", ref: "tros" },
   { id: "fod", ref: "series-fod", when: "Every era",
     note: "Short vignettes from every era. Watch them whenever you like." },

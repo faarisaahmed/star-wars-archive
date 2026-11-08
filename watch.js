@@ -13,6 +13,15 @@
   const STORE_KEY = 'sw-watched';
   let watched = {};
   try { watched = JSON.parse(localStorage.getItem(STORE_KEY)) || {}; } catch (e) { watched = {}; }
+  // Keys from the first version of this list, when films and some shows
+  // had rows of their own on either side.
+  const RENAMED = {
+    'tcw:film': 'w:tcw-film', 'w:totu-bane': 'totu:bane', 'w:totu-ventress': 'totu:ventress',
+    'w:resistance-s1': 'resistance:S1', 'w:resistance-s2': 'resistance:S2',
+  };
+  Object.entries(RENAMED).forEach(([from, to]) => {
+    if (watched[from]) { watched[to] = 1; delete watched[from]; }
+  });
   function save() {
     try { localStorage.setItem(STORE_KEY, JSON.stringify(watched)); } catch (e) { /* storage blocked: progress lasts for this visit only */ }
   }
@@ -35,11 +44,14 @@
   const steps = SW_WATCH.map((s, i) => {
     const item = byId[s.ref];
     const show = s.show || s.id;
-    const eps = (s.eps || []).map(([code, title, note]) => ({
-      key: code.includes(':') ? code : `${show}:${code}`,
-      badge: badge(code),
-      title, note,
-    }));
+    const eps = (s.eps || []).map(([code, title, note]) => {
+      if (code[0] === '@') {
+        // A film that happens partway through this show
+        const film = byId[code.slice(1)];
+        return { key: `w:${film.id}`, badge: 'Film', title: title || film.title, note, film };
+      }
+      return { key: code.includes(':') ? code : `${show}:${code}`, badge: badge(code), title, note };
+    });
     return {
       ...s, n: i + 1, item, eps,
       title: s.title || item.title,
@@ -93,6 +105,11 @@
       `<span>${st.item.type === 'movie' ? 'Film' : 'Series'}</span>`,
       st.when ? `<span>${st.when}</span>` : '',
     ].filter(Boolean).join('');
+    const films = st.eps.filter(e => e.film);
+    if (films.length) {
+      meta.insertAdjacentHTML('beforeend',
+        `<span class="w-includes">Includes the film${films.length > 1 ? "s" : ""} ${films.map(f => `<i>${f.title}</i>`).join(' and ')}</span>`);
+    }
     main.appendChild(meta);
     if (st.note) {
       const note = document.createElement('p');
@@ -128,7 +145,8 @@
       st.eps.forEach(ep => {
         const eli = document.createElement('li');
         const on = isOn(ep.key);
-        eli.className = 'w-ep' + (on ? ' done' : '');
+        eli.className = 'w-ep' + (on ? ' done' : '') + (ep.film ? ' film' : '');
+        if (ep.film) eli.style.setProperty('--c', eraColor(ep.film.era));
         if (hideEl.checked && on) eli.hidden = true;
         const label = document.createElement('label');
         const ecb = checkbox(on, '');
@@ -137,6 +155,14 @@
         label.insertAdjacentHTML('beforeend',
           `${ep.badge ? `<span class="w-badge">${ep.badge}</span>` : ''}<span class="w-ep-title">${ep.title}</span>${ep.note ? `<span class="w-ep-note">${ep.note}</span>` : ''}`);
         eli.appendChild(label);
+        if (ep.film) {
+          const info = document.createElement('button');
+          info.className = 'w-ep-info';
+          info.textContent = 'Details';
+          info.setAttribute('aria-label', `${ep.title} details`);
+          info.addEventListener('click', () => openModal(ep.film));
+          eli.appendChild(info);
+        }
         ol.appendChild(eli);
       });
       li.appendChild(ol);
@@ -166,7 +192,7 @@
       const ep = next.eps.find(e => !isOn(e.key));
       const btn = document.createElement('button');
       btn.className = 'w-next-btn';
-      btn.innerHTML = `<span>Up next</span> ${next.title}${ep ? ` · ${ep.badge ? ep.badge + ' ' : ''}${ep.title}` : (next.part ? ` · ${next.part}` : '')}`;
+      btn.innerHTML = `<span>Up next</span> ${next.title}${ep ? (ep.film ? ` · then ${ep.title}` : ` · ${ep.badge ? ep.badge + ' ' : ''}${ep.title}`) : (next.part ? ` · ${next.part}` : '')}`;
       btn.addEventListener('click', () => {
         if (next.eps.length) expanded.add(next.id);
         render();
